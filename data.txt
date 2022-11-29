@@ -1,4 +1,4 @@
-Face bounds : [10, 152, 234, 454]
+Face bounds : [152, 234, 10, 454]
 - right  : 454
 - top    :  10
 - left   : 234
@@ -30,7 +30,7 @@ Right eye : [263, 386, 398, 374]
 - left   : 398
 - bottom : 374
 
-Mouth : [308, 13, 78, 14]
+Mouth : [14, 78, 13, 308]
 - right  : 308
 - top    :  13
 - left   :  78
@@ -45,3 +45,7 @@ top : 411
 Left Moustache : [214, 187]
 bottom : 214
 top : 187
+
+Left eye without iris : [145, 476, 159, 474]
+
+Right eye without iris : [374, 471, 386, 469]
