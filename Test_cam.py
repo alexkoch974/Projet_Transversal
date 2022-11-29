@@ -1,12 +1,14 @@
 import cv2
+import numpy as np
 import mediapipe as mp
-mp_drawing = mp.solutions.drawing_utils
-mp_drawing_styles = mp.solutions.drawing_styles
+
 mp_face_mesh = mp.solutions.face_mesh
 
+FACE = [67, 103, 54, 297, 332, 284, 10, 152, 234, 454, 473, 474, 475, 476, 477, 468, 469, 470, 471, 472, 173, 159, 33, 145, 263, 386, 398, 374, 308, 13, 78, 14]
+
 # For webcam input:
-drawing_spec = mp_drawing.DrawingSpec(thickness=1, circle_radius=1)
 cap = cv2.VideoCapture(0)
+cv2.namedWindow("Test")
 with mp_face_mesh.FaceMesh(
     max_num_faces=1,
     refine_landmarks=True,
@@ -24,17 +26,12 @@ with mp_face_mesh.FaceMesh(
     image.flags.writeable = False
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     results = face_mesh.process(image)
-
-    # Draw the face mesh annotations on the image.
-    image.flags.writeable = True
-    image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+    
     if results.multi_face_landmarks:
-      for face_landmarks in results.multi_face_landmarks:
-        mp_drawing.draw_landmarks(
-            image=image,
-            landmark_list=face_landmarks)
-    # Flip the image horizontally for a selfie-view display.
-    cv2.imshow('MediaPipe Face Mesh', cv2.flip(image, 1))
+      points_mat = np.array([[int(results.multi_face_landmarks[0].landmark[i].x*image.shape[1]), int(results.multi_face_landmarks[0].landmark[i].y*image.shape[0])] for i in FACE])
+      for point in points_mat:
+        cv2.circle(image, (int(point[0]), int(point[1])), 1, (0, 255, 0), 1)
+    cv2.imshow('Test', cv2.flip(image, 1))
     if cv2.waitKey(5) & 0xFF == 27:
       break
 cap.release()

@@ -1,0 +1,59 @@
+<?xml version="1.0" ?>
+<Avatar>
+	<earL>
+		<top/>
+		<bottom/>
+		<left x="620" y="792"/>
+		<right x="770" y="736"/>
+		<center x="694" y="756"/>
+	</earL>
+	<earR>
+		<top/>
+		<bottom/>
+		<left x="1000" y="732"/>
+		<right x="1154" y="790"/>
+		<center x="1076" y="752"/>
+	</earR>
+	<face>
+		<top x="882" y="720"/>
+		<bottom x="890" y="1354"/>
+		<left x="496" y="1060"/>
+		<right x="1282" y="1082"/>
+		<center/>
+	</face>
+	<eyeL>
+		<top x="810" y="906"/>
+		<bottom x="812" y="1120"/>
+		<left x="790" y="1014"/>
+		<right x="826" y="1014"/>
+		<center/>
+	</eyeL>
+	<eyeR>
+		<top x="962" y="904"/>
+		<bottom x="960" y="1118"/>
+		<left x="944" y="1016"/>
+		<right x="982" y="1016"/>
+		<center/>
+	</eyeR>
+	<moustacheL>
+		<top x="656" y="1112"/>
+		<bottom x="654" y="1206"/>
+		<left/>
+		<right/>
+		<center/>
+	</moustacheL>
+	<moustacheR>
+		<top x="1124" y="1114"/>
+		<bottom x="1114" y="1218"/>
+		<left/>
+		<right/>
+		<center/>
+	</moustacheR>
+	<mouth>
+		<top x="890" y="1198"/>
+		<bottom x="890" y="1250"/>
+		<left x="834" y="1216"/>
+		<right x="948" y="1214"/>
+		<center/>
+	</mouth>
+</Avatar>

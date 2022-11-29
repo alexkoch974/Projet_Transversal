@@ -37,3 +37,11 @@ Mouth : [308, 13, 78, 14]
 - bottom :  14
 
 Nose : [4]
+
+Right Moustache : [434, 411]
+bottom : 434
+top : 411
+
+Left Moustache : [214, 187]
+bottom : 214
+top : 187
