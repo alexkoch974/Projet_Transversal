@@ -76,8 +76,8 @@ def click(event, x, y, flags, param):
             temp = 'mouth'
 
         if event == cv2.EVENT_LBUTTONDOWN:
-            saved_points.append((x*2, y*2))
-            dico[temp].append((x*2, y*2))
+            saved_points.append((x, y))
+            dico[temp].append((x, y))
             
 
 cv2.namedWindow('Avatar')
@@ -88,7 +88,7 @@ while True:
     img = cv2.imread('.\\avatar\\fuwa_glace.png')
     
     for i in range(len(saved_points)):
-        cv2.circle(img, (int(saved_points[i][0]), int(saved_points[i][1])), 5, (0, 0, 255), 10)
+        cv2.circle(img, (int(saved_points[i][0]), int(saved_points[i][1])), 1, (0, 0, 255), 3)
         
 
     key = cv2.waitKey(1)
@@ -96,8 +96,8 @@ while True:
         break
     
     
-    cv2.putText(img, f'{part} : {order}', (20,70), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
-    cv2.imshow("Avatar", cv2.resize(img, (0, 0), fx = 1/2, fy = 1/2))
+    cv2.putText(img, f'{part} : {order}', (10,20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+    cv2.imshow("Avatar", img)
     
     if len(dico['mouth']) == 4 :
         break
