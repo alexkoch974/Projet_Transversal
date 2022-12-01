@@ -42,7 +42,7 @@ def overlay_image_alpha(img_source, img_overlay, x, y):
 
 
 
-img_path = os.path.join('imgs', 'avatar', 'mouth.png')
+img_path = os.path.join('data', 'avatar', 'mouth.png')
 img = cv2.imread(img_path, cv2.IMREAD_UNCHANGED)
 
 cv2.namedWindow("Test")
