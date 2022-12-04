@@ -19,12 +19,21 @@ cv2.namedWindow('Avatar', cv2.WINDOW_NORMAL)
 if (cap.isOpened()== False): 
   print("Error opening video stream or file")
 
+# Set the interpolation factor (0.0 for no interpolation, 1.0 for maximum interpolation)
+interp_factor = 0.5
+
+# Initialize the current position and angle of the avatar
+avatar_x = 0
+avatar_y = 0
+avatar_w = 0
+avatar_h = 0
+avatar_angle = 0
+
 # Read until video is completed
 while(cap.isOpened()):
   # Capture frame-by-frame
   ret, frame = cap.read()
   if ret == True:
-
     # Display the original frame
     cv2.imshow('Source', frame)
 
@@ -41,21 +50,16 @@ while(cap.isOpened()):
     for (x, y, w, h) in faces:
       cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 0), 2)
 
-      # Update the position and orientation of the avatar image
-      # based on the position and orientation of the face
-      avatar_x = x
-      avatar_y = y
-      avatar_w = w
-      avatar_h = h
-      avatar_angle = ...
+      # Calculate the rotation angle of the avatar based on the orientation of the face
+      avatar_angle = np.arctan2(h, w) * 180 / np.pi
 
-      # Resize and rotate the avatar image
-      avatar_image_output = cv2.resize(avatar_image_output, (avatar_w, avatar_h), cv2.INTER_LINEAR)
-      avatar_image_output = cv2.rotate(avatar_image_output, cv2.ROTATE_90_CLOCKWISE)
+    # Check if the face has a valid width and height
+    if w > 0 and h > 0:
+      # Rotate the avatar image
+      avatar_image_output = cv2.rotate(avatar_image_output, cv2.ROTATE_90_CLOCKWISE + int(avatar_angle))
 
-
-    # Display the avatar image in the avatar window
-    cv2.imshow('Avatar', avatar_image_output)
+      # Display the avatar image in the avatar window
+      cv2.imshow('Avatar', avatar_image_output)
 
     # Press Q on keyboard to  exit
     if cv2.waitKey(25) & 0xFF == ord('q'):
