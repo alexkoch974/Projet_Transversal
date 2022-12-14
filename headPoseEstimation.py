@@ -13,6 +13,14 @@ drawing_spec = mp_drawing.DrawingSpec(thickness=1, circle_radius=1)
 
 cap = cv2.VideoCapture(0)
 
+# Load the avatar image from the specified path
+avatar_up = cv2.imread('avatar/all_up.png')
+avatar_right = cv2.imread('avatar/all_right.png')
+avatar_down = cv2.imread('avatar/all_down.png')
+avatar_left = cv2.imread('avatar/all_left.png')
+avatar = cv2.imread('avatar/all_forward.png')
+
+
 while cap.isOpened():
     success, image = cap.read()
 
@@ -88,14 +96,19 @@ while cap.isOpened():
             # See where the user's head tilting
             if y < -10:
                 text = "Looking Left"
+                cv2.imshow('Avatar', avatar_left)
             elif y > 10:
                 text = "Looking Right"
+                cv2.imshow('Avatar', avatar_right)
             elif x < -10:
                 text = "Looking Down"
+                cv2.imshow('Avatar', avatar_down)
             elif x > 10:
                 text = "Looking Up"
+                cv2.imshow('Avatar', avatar_up)
             else:
                 text = "Forward"
+                cv2.imshow('Avatar', avatar)
 
             # Display the nose direction
             nose_3d_projection, jacobian = cv2.projectPoints(nose_3d, rot_vec, trans_vec, cam_matrix, dist_matrix)
@@ -128,7 +141,7 @@ while cap.isOpened():
                     connection_drawing_spec=drawing_spec)
 
 
-    cv2.imshow('Head Pose Estimation', image)
+    cv2.imshow('Source', image)
 
     if cv2.waitKey(5) & 0xFF == 27:
         break
