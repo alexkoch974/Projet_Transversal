@@ -19,16 +19,6 @@ cv2.namedWindow('Avatar', cv2.WINDOW_NORMAL)
 if (cap.isOpened()== False): 
   print("Error opening video stream or file")
 
-# Set the interpolation factor (0.0 for no interpolation, 1.0 for maximum interpolation)
-interp_factor = 0.5
-
-# Initialize the current position and angle of the avatar
-avatar_x = 0
-avatar_y = 0
-avatar_w = 0
-avatar_h = 0
-avatar_angle = 0
-
 # Read until video is completed
 while(cap.isOpened()):
   # Capture frame-by-frame
@@ -45,21 +35,24 @@ while(cap.isOpened()):
 
     # Initialize the avatar image as a copy of the original avatar
     avatar_image_output = avatar_image.copy()
+    cv2.imshow('Avatar', avatar_image_output)
 
-    # Iterate through the faces and draw a rectangle around each face
-    for (x, y, w, h) in faces:
-      cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 0), 2)
+    # Check if a face was detected
+    if len(faces) > 0:
+      # Iterate through the faces and draw a rectangle around each face
+      for (x, y, w, h) in faces:
 
-      # Calculate the rotation angle of the avatar based on the orientation of the face
-      avatar_angle = np.arctan2(h, w) * 180 / np.pi
+        # Draw a rectangle around the face
+        cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 0), 2)
+        cv2.imshow('Source', frame)
 
-    # Check if the face has a valid width and height
-    if w > 0 and h > 0:
-      # Rotate the avatar image
-      avatar_image_output = cv2.rotate(avatar_image_output, cv2.ROTATE_90_CLOCKWISE + int(avatar_angle))
+        # Compute the face translatio
+        T = np.float32([[1, 0, x], [0, 1, y]])
 
-      # Display the avatar image in the avatar window
-      cv2.imshow('Avatar', avatar_image_output)
+        # Apply the face translation to the avatar
+        avatar_translation = cv2.warpAffine(avatar_image, T, (frame.shape[1], frame.shape[0]))
+
+        cv2.imshow('Avatar', avatar_translation)
 
     # Press Q on keyboard to  exit
     if cv2.waitKey(25) & 0xFF == ord('q'):
