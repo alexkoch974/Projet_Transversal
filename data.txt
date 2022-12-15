@@ -1,36 +1,85 @@
-Face bounds : [152, 234, 10, 454]
+Bx = Ax cos Sx - Ay sin Sy = Ax cos Sx - Ay sin Sy + tx
+By = Ax sin Sx + Ay cos Sy = Ax sin Sx + Ay cos Sy + ty
+
+A -> model
+B -> visage
+
+A = [ Ax ]	B = [ Bx ]
+    [ Ay ]	    [ By ]
+    [  1 ]
+
+B = MA
+
+M = 	[ cos Sx     -sin Sy     tx ]
+	[ sin Sx      cos Sy     ty ]
+
+a      b      c
+d      e      f
+
+Sx = sqrt(a² + d²)
+Sy = sqrt(b² + e²)
+
+angle = atan2(b, a)
+
+tx = c
+ty = f
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Face bounds : [10, 152, 234, 454]
 - right  : 454
 - top    :  10
 - left   : 234
 - bottom : 152
 
-Left iris : [473, 474, 475, 476, 477]
+Left Ear : [103, 109, 67]
+- left : 103
+- right : 109
+- center : 67
+
+Right Ear : [338, 332 , 297]
+- left : 338
+- right : 332
+- center : 297
+
+Left iris : 
 - center : 473
 - right  : 474
 - top    : 475
 - left   : 476
 - bottom : 477
   
-Right iris : [468, 469, 470, 471, 472]
+Right iris : 
 - center : 468
 - right  : 469
 - top    : 470
 - left   : 471
 - bottom : 472
 
-Left eye : [173, 159, 33, 145]
+Left eye : [159, 145, 33, 173]
 - right  : 173
 - top    : 159
 - left   :  33
 - bottom : 145
 
-Right eye : [263, 386, 398, 374]
+Right eye : [386, 374, 398, 263]
 - right  : 263
 - top    : 386
 - left   : 398
 - bottom : 374
 
-Mouth : [14, 78, 13, 308]
+Mouth : [13, 14, 78, 308]
 - right  : 308
 - top    :  13
 - left   :  78
@@ -38,14 +87,11 @@ Mouth : [14, 78, 13, 308]
 
 Nose : [4]
 
-Right Moustache : [434, 411]
+Right Moustache : [411, 434]
 bottom : 434
 top : 411
 
-Left Moustache : [214, 187]
+Left Moustache : [187, 214]
 bottom : 214
 top : 187
 
-Left eye without iris : [145, 476, 159, 474]
-
-Right eye without iris : [374, 471, 386, 469]

@@ -41,6 +41,7 @@ with mp_face_mesh.FaceMesh(
       points_mat = np.array([[int(results.multi_face_landmarks[0].landmark[i].x*image.shape[1]), int(results.multi_face_landmarks[0].landmark[i].y*image.shape[0])] for i in ALL_POINTS])
       for point in points_mat:
         cv2.circle(image, (int(point[0]), int(point[1])), 1, (0, 255, 0), 1)
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     cv2.imshow('Test', cv2.flip(image, 1))
     key = cv2.waitKey(1)
     if key == ord('q'):
