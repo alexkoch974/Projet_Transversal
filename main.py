@@ -5,8 +5,8 @@ import argparse
 from rich_argparse import RichHelpFormatter
 import numpy as np
 
-from utils import *
-from calibration import calibrate_avatar
+from src.utils import *
+from src.calibration import calibrate_avatar
 
 
 def compute_transformation(
@@ -71,7 +71,7 @@ def apply_transformation(
     """
 
     # Apply squeeze
-    img = cv2.resize(img, (0, 0), fx=squeeze[0], fy=max(squeeze[1], 0.01))
+    img = cv2.resize(img, (0, 0), fx=max(squeeze[0], 0.05), fy=max(squeeze[1], 0.05))
 
     # Apply rotation
     img = rotate_image(img, angle)
@@ -91,18 +91,18 @@ def compute_homography(
     ref_points: np.ndarray,
     points: np.ndarray
 ) -> np.ndarray:
-    """Compute homography.
+    """Compute homography parameters.
 
     Args:
         ref_points (np.ndarray): reference points
         points (np.ndarray): points
 
     Returns:
-        np.ndarray: homography
+        np.ndarray: homography parameters
     """
 
-    # Compute homography
-    H, _ = cv2.findHomography(ref_points, points)
+    # Compute homographie
+    H, _ = cv2.findHomography(ref_points, points, cv2.RANSAC)
 
     return H
 
@@ -117,18 +117,19 @@ def apply_homography(
     Args:
         img_source (np.ndarray): source image
         img (np.ndarray): image to transform
-        H (np.ndarray): homography
+        H (np.ndarray): homography parameters
 
     Returns:
         np.ndarray: transformed image
     """
 
-    # Apply homography
+    # Apply homographie
     img_result = cv2.warpPerspective(
         img, H, (img_source.shape[1], img_source.shape[0]))
 
-    # Overlay images
-    img_result = overlay_image_alpha(img_source, img_result, 0, 0)
+    # Overlay
+    img_result = overlay_image_alpha(
+        img_source, img_result, 0, 0)
 
     return img_result
 
@@ -136,7 +137,7 @@ def apply_homography(
 def _main_(args: argparse.Namespace) -> None:
     """Main function."""
 
-    path = os.path.join(os.path.dirname(__file__), 'data', args.avatar)
+    path = os.path.join(os.path.dirname(__file__), 'src/data', args.avatar)
 
     # Calibration
     if args.calibrate:
@@ -158,6 +159,8 @@ def _main_(args: argparse.Namespace) -> None:
     if args.debug:
         cv2.namedWindow('Source with 3D points', cv2.WINDOW_NORMAL)
         cv2.namedWindow('Source with 2D points', cv2.WINDOW_NORMAL)
+    scale_factor = avatar_config['scale']
+    shape = (np.array(avatar_config['shape']) * scale_factor).astype(np.int32)
 
     running = True
     # Main loop
@@ -175,32 +178,122 @@ def _main_(args: argparse.Namespace) -> None:
         if points is None:
             continue
 
+        # Remove reference offset
+        points *= scale_factor
+        offset_ref = np.mean(points[avatar_config['reference']['points']], axis=0)
+        points -= offset_ref - shape / 2
+
         # Draw the avatar
-        img_avatar = 255 * np.ones_like(frame)
+        img_avatar = 255 * np.ones(list(shape) + [4], dtype=np.uint8)
         for name, piece in avatar_config['pieces'].items():
+
             # Get current piece of the face
             img_path = os.path.join(path, name + '.png')
             avatar_piece = cv2.imread(img_path, cv2.IMREAD_UNCHANGED)
+            avatar_piece = cv2.resize(avatar_piece, (0, 0), fx=scale_factor, fy=scale_factor)
 
-            # Get transformation parameters
-            translation, squeeze, angle = compute_transformation(
-                np.array(piece['calibration']),
-                points[piece['mesh']])
-            # homoraphy = compute_homography(
-            #     np.array(piece['calibration']),
-            #     points[piece['mesh']])
+            # Get reference points
+            ref_points = [np.array(piece['calibration'][i]) * scale_factor
+                          for i in range(len(piece['calibration']))]
 
-            # Apply transformation
-            img_avatar = apply_transformation(
-                img_avatar,
-                avatar_piece,
-                translation,
-                squeeze,
-                angle)
-            # img_avatar = apply_homography(
-            #     img_avatar,
-            #     avatar_piece,
-            #     homoraphy)
+            for ref_points_, transfo in zip(ref_points, piece['transformations']):
+                cur_points = points[transfo['points']]
+
+                if transfo['method'] == 'transform':
+                    # Get transformation parameters
+                    translation, squeeze, angle = compute_transformation(
+                        ref_points_ -
+                        np.array([avatar_piece.shape[1] / 2,
+                                  avatar_piece.shape[0] / 2]),
+                        cur_points)
+
+                    # Apply transformation
+                    img_avatar = apply_transformation(
+                        img_avatar,
+                        avatar_piece,
+                        translation,
+                        squeeze,
+                        angle)
+
+                    # Update ref_points
+                    transfo_mat = np.array([
+                        [
+                            np.cos(angle) * squeeze[0],
+                            -np.sin(angle) * squeeze[1],
+                            translation[0]
+                        ],
+                        [
+                            np.sin(angle) * squeeze[0],
+                            np.cos(angle) * squeeze[1],
+                            translation[1]
+                        ]
+                    ])
+                    for point_i, points_ in enumerate(ref_points):
+                        points_ = np.array([
+                            points_[:, 0],
+                            points_[:, 1],
+                            np.ones(len(points_))
+                        ])
+                        ref_points[point_i] = (
+                            transfo_mat @ points_).transpose()
+
+                elif transfo['method'] == 'reference':
+                    # Get translation parameters
+                    translation = np.mean(cur_points, axis=0) - \
+                        np.mean(ref_points_, axis=0)
+                    
+                    # Apply translation
+                    img_avatar = overlay_image_alpha(
+                        img_avatar, avatar_piece, translation[0], translation[1])
+
+                elif transfo['method'] == 'homography':
+                    # Get homography matrix
+                    homography = compute_homography(
+                        ref_points_,
+                        cur_points)
+
+                    # Apply homography
+                    img_avatar = apply_homography(
+                        img_avatar,
+                        avatar_piece,
+                        homography)
+
+                    # Update ref_points
+                    for point_i, points_ in enumerate(ref_points):
+                        points_ = np.array([
+                            points_[:, 0],
+                            points_[:, 1],
+                            np.ones(len(points_))
+                        ])
+                        ref_points[point_i] = (
+                            homography @ points_).transpose()[..., :2]
+
+                elif transfo['method'] == 'squeeze':
+                    # Get squeeze
+                    ref_dist = (
+                        np.linalg.norm(ref_points_[0] - ref_points_[1]) /
+                        np.linalg.norm(ref_points_[2] - ref_points_[3])
+                    )
+                    cur_dist = (
+                        np.linalg.norm(cur_points[0] - cur_points[1]) /
+                        np.linalg.norm(cur_points[2] - cur_points[3])
+                    )
+                    squeeze = np.array([
+                        1,
+                        cur_dist / ref_dist
+                    ])
+
+                    # Save previous shape
+                    prev_shape = avatar_piece.shape
+
+                    # Apply squeeze to image and ref_points
+                    avatar_piece = cv2.resize(
+                        avatar_piece, (0, 0), fx=squeeze[0], fy=squeeze[1])
+                    for ref_points_ in ref_points:
+                        ref_points_ -= (1-squeeze) * np.array([
+                            prev_shape[1] / 2,
+                            prev_shape[0] / 2
+                        ])
 
         # Display the result
         cv2.imshow('Source', frame)
