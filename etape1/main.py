@@ -14,11 +14,11 @@ drawing_spec = mp_drawing.DrawingSpec(thickness=1, circle_radius=1)
 cap = cv2.VideoCapture(0)
 
 # Load the avatar image from the specified path
-avatar_up = cv2.imread('avatar/all_up.png')
-avatar_right = cv2.imread('avatar/all_right.png')
-avatar_down = cv2.imread('avatar/all_down.png')
-avatar_left = cv2.imread('avatar/all_left.png')
-avatar = cv2.imread('avatar/all_forward.png')
+avatar_up = cv2.imread('data/avatar/all_up.png')
+avatar_right = cv2.imread('data/avatar/all_right.png')
+avatar_down = cv2.imread('data/avatar/all_down.png')
+avatar_left = cv2.imread('data/avatar/all_left.png')
+avatar = cv2.imread('data/avatar/all_forward.png')
 
 
 while cap.isOpened():
@@ -128,10 +128,10 @@ while cap.isOpened():
         end = time.time()
         totalTime = end - start
 
-        fps = 1 / totalTime
+        #fps = 1 / totalTime
         #print("FPS: ", fps)
 
-        cv2.putText(image, f'FPS: {int(fps)}', (20,450), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0,255,0), 2)
+        #cv2.putText(image, f'FPS: {int(fps)}', (20,450), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0,255,0), 2)
 
         mp_drawing.draw_landmarks(
                     image=image,
