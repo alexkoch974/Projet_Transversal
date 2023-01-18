@@ -85,7 +85,7 @@ cv2.setMouseCallback("Avatar", click)
  
 
 while True:
-    img = cv2.imread('.\\avatar\\fuwa_glace.png')
+    img = cv2.imread('.\\avatar\\fuwa_glace.png', cv2.IMREAD_UNCHANGED)
     
     for i in range(len(saved_points)):
         cv2.circle(img, (int(saved_points[i][0]), int(saved_points[i][1])), 1, (0, 0, 255), 3)
@@ -106,22 +106,23 @@ print(dico)
 
 root = minidom.Document()
 avatar = root.createElement('Avatar')
-top = root.createElement('top')
 bottom = root.createElement('bottom')
 left = root.createElement('left')
-right = root.createElement('right')
+top = root.createElement('top')
 center = root.createElement('center')    
+right = root.createElement('right')
 
 root.appendChild(avatar)
 for i in range(len(dico)):
     
     keys = list(dico.keys())
     child = root.createElement(keys[i])
-    top = root.createElement('top')
     bottom = root.createElement('bottom')
     left = root.createElement('left')
-    right = root.createElement('right')
+    top = root.createElement('top')
     center = root.createElement('center')
+    right = root.createElement('right')
+    
     
     avatar.appendChild(child)
     
@@ -147,7 +148,7 @@ for i in range(len(dico)):
         top.setAttribute('x', str(dico[keys[i]][1][0]))
         top.setAttribute('y', str(dico[keys[i]][1][1]))
        
-    for element in [top, bottom, left, right, center] :
+    for element in [bottom, left, top, center, right] :
         child.appendChild(element)   
     
     

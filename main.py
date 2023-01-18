@@ -6,10 +6,11 @@ from xml.dom import Node, minidom
 from part import Moving_part
 import time
 
+keys = ['earL', 'earR', 'face', 'eyeL', 'eyeR', 'moustacheL', 'moustacheR', 'mouth']
 
 EAR_L = [103, 109, 67]
 EAR_R = [338, 332 , 297]
-FACE = [10, 152, 234, 454]
+FACE = [152, 234, 10, 454]
 EYE_L = [159, 145, 33, 173]
 EYE_R =[386, 374, 398, 263]
 MOUSTACHE_L = [187, 214]
@@ -18,14 +19,15 @@ MOUTH = [13, 14, 78, 308]
 
 ALL_POINTS = EAR_L + EAR_R + FACE + EYE_L + EYE_R + MOUSTACHE_L + MOUSTACHE_R + MOUTH
 
-paths = [os.path('.', 'avatar', 'earL.png'), 
-         os.path('.', 'avatar', 'earR.png'), 
-         os.path('.', 'avatar', 'face.png'),
-         os.path('.', 'avatar', 'eyeL.png'),
-         os.path('.', 'avatar', 'eyeR.png'),
-         os.path('.', 'avatar', 'moustacheL.png'),
-         os.path('.', 'avatar', 'moustacheR.png'),
-         os.path('.', 'avatar', 'mouth.png')]
+# paths = ['.\\avatar\\earL.png', 
+#          '.\\avatar\\earR.png', 
+#          '.\\avatar\\face.png',
+#          '.\\avatar\\eyeL.png',
+#          '.\\avatar\\eyeR.png',
+#          '.\\avatar\\moustacheL.png',
+#          '.\\avatar\\moustacheR.png',
+#          '.\\avatar\\mouth.png']
+paths = ['.\\avatar\\fuwa_glace.png']
 
 
 def get_avatar_points(calibration_file = 'calibration_avatar.xml'):
@@ -62,26 +64,39 @@ def get_avatar_points(calibration_file = 'calibration_avatar.xml'):
     return dico
 
 
-def compute_calibration_transformations(calibration_avatar, calibration_face) :
+def compute_calibration_homorgaphie(calibration_avatar, calibration_face, key) :
     
-    # for key in calibration_face.keys() :
-        key = 'mouth'
+    face_list = []
+    for points in calibration_face[key] :
+        face_list.append(points)
+    input_face = np.array(face_list)          
+    input_avatar = np.array(calibration_avatar[key].get_points())
+    if input_face.size == 0 or input_avatar.size == 0 :
+        H = None
+        flag = False
+    elif input_face.shape[0] < 4 or input_avatar.shape[0] < 4 :
         face_list = []
-        for points in calibration_face[key] :
+        for points in calibration_face['face'] :
             face_list.append(points)
-        input_face = np.array(face_list)          
-        input_avatar = np.array(calibration_avatar[key].get_points())
-        if input_face == [] or input_avatar == [] :
-            H = None
-            flag = False
-        elif input_face.shape[0] < 4 or input_avatar.shape[0] < 4 :
-            H = None
-            flag = False
-        else :   
-            H, _ = cv2.findHomography(input_avatar,input_face)
+        new_input_face = np.array(face_list)          
+        new_input_avatar = np.array(calibration_avatar['face'].get_points())
+        if input_face.shape[0] == 3 and input_avatar.shape[0] == 3 :
+            H, _ = cv2.findHomography(new_input_face, new_input_avatar)
             flag = True
+        elif input_face.shape[0] == 2 and input_avatar.shape[0] == 2 :
+            H, _ = cv2.findHomography(new_input_face, new_input_avatar)
+            flag = True
+        else :
+            H = None
+            flag = False
+    else :   
+        H, _ = cv2.findHomography(input_face, input_avatar)
+        flag = True
     
-        return H, flag
+    if H is None :
+        flag = False
+    
+    return H, flag
 
 
 def calibrate_face(points_mat) :
@@ -128,27 +143,54 @@ def calibrate_face(points_mat) :
     return dico
 
 
+
+def mix_images(img_source: np.ndarray, img_overlay: np.ndarray) :
+    """Overlay img_overlay on top of img_source, using alpha
+    channel of img_overlay.
+
+    Args:
+        img_source (np.ndarray): background image
+        img_overlay (np.ndarray): overlay image
+
+    Returns:
+        np.ndarray: overlayed image
+    """
+    
+    img = img_source.copy()
+    img_crop = img
+    img_overlay_crop = img_overlay
+    alpha = img_overlay[:, :, 3][:, :, np.newaxis] / 255.0
+    alpha_inv = 1.0 - alpha
+
+    img_crop[:] = alpha * img_overlay_crop + alpha_inv * img_crop
+
+    return img
+                
+
+
+
 def _main_() :
     
     mp_face_mesh = mp.solutions.face_mesh
-    calibration_avatar = get_avatar_points('.\\fuwa_glace_calibration.xml')
+    calibration_avatar = get_avatar_points('.\\calibration_avatar.xml')
     calibration_face = {}
     not_calibrated = True
     avatar_ready = False
     cap = cv2.VideoCapture(0)
     cv2.namedWindow("Face Calibration")
-    cv2.namedWindow("Preview")
+    cv2.namedWindow("Preview")   
+    loops = 0
+    liste_points = []
     
-    avatar_pieces = []
-    for p in paths :
-        avatar_pieces.append(cv2.imread(p))    
-    
-    with mp_face_mesh.FaceMesh(
-    max_num_faces=1,
+    with mp_face_mesh.FaceMesh(max_num_faces=1,
     refine_landmarks=True,
     min_detection_confidence=0.5,
     min_tracking_confidence=0.5) as face_mesh:
         while cap.isOpened():
+                            
+            avatar_pieces = []
+            for p in paths :
+                avatar_pieces.append(cv2.imread(p, cv2.IMREAD_UNCHANGED)) 
             
             success, image = cap.read()
             preview_image = image.copy()
@@ -162,13 +204,15 @@ def _main_() :
             
             image.flags.writeable = False
             image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-            
-            points_mat = []
             results = face_mesh.process(image)
-            if results.multi_face_landmarks:
-                points_mat = [[int(results.multi_face_landmarks[0].landmark[i].x*image.shape[1]),
-                                        int(results.multi_face_landmarks[0].landmark[i].y*image.shape[0])]
-                                        for i in ALL_POINTS]
+            if results.multi_face_landmarks is not None :
+                results = results.multi_face_landmarks[0]
+            else :
+                continue
+
+            points_mat = [[int(results.landmark[i].x*image.shape[1]), int(results.landmark[i].y*image.shape[0])] for i in ALL_POINTS]
+                
+            if points_mat :               
                 for point in points_mat:
                     cv2.circle(image, (int(point[0]), int(point[1])), 1, (0, 255, 0), 1)
                     
@@ -182,7 +226,7 @@ def _main_() :
                 cv2.imshow('Face Calibration', cv2.flip(image, 1))
                 
             key = cv2.waitKey(1)
-            if key == ord('q'):
+            if key == ord('q') or key == 27 :
                 break
             elif key == 13 :
                 if not_calibrated :
@@ -191,12 +235,29 @@ def _main_() :
                     cv2.destroyWindow("Face Calibration")
                     avatar_ready = True
             
-            if avatar_ready :
-                calibration_face = calibrate_face(points_mat)
-                H, homography_is_good = compute_calibration_transformations(calibration_avatar, calibration_face)
-                if homography_is_good :
-                    result_image = cv2.warpPerspective(result_image, H, (480, 480))
-                    cv2.imshow('Result', cv2.flip(result_image, 1))
+            if loops >= 1 : 
+                dico_buff = calibration_face.copy()
+            
+                if avatar_ready :
+                    calibration_face = calibrate_face(points_mat)
+                    homographies = [] 
+                    for i in range(len(paths)) :
+                        H, homography_is_good = compute_calibration_homorgaphie(calibration_avatar, calibration_face, 'face')
+                        if homography_is_good :
+                            homographies.append(H)
+                        else :
+                            break
+                    if homography_is_good :
+                        result_image = np.ones((480,480,4)) * 255.0
+                        for i in range(len(paths)) :
+                            if homographies[i].shape == (3,3) :
+                                avatar_pieces[i] = cv2.warpPerspective(avatar_pieces[i], homographies[i], (480, 480))
+                            result_image = mix_images(result_image, avatar_pieces[i])
+                        cv2.imshow('Result', result_image/255.0)
+                    
+            loops += 1
+            
+
 
             
 

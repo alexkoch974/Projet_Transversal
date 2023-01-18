@@ -1,59 +1,59 @@
 <?xml version="1.0" ?>
 <Avatar>
 	<earL>
-		<top/>
 		<bottom/>
-		<left x="165" y="212"/>
-		<right x="204" y="196"/>
-		<center x="183" y="202"/>
+		<left x="164" y="211"/>
+		<top/>
+		<center x="184" y="201"/>
+		<right x="205" y="196"/>
 	</earL>
 	<earR>
-		<top/>
 		<bottom/>
-		<left x="268" y="197"/>
-		<right x="311" y="210"/>
+		<left x="267" y="194"/>
+		<top/>
 		<center x="287" y="201"/>
+		<right x="310" y="212"/>
 	</earR>
 	<face>
-		<top x="238" y="193"/>
-		<bottom x="239" y="361"/>
-		<left x="131" y="289"/>
-		<right x="341" y="282"/>
+		<bottom x="237" y="361"/>
+		<left x="133" y="287"/>
+		<top x="236" y="193"/>
 		<center/>
+		<right x="342" y="287"/>
 	</face>
 	<eyeL>
+		<bottom x="216" y="299"/>
+		<left x="209" y="270"/>
 		<top x="216" y="242"/>
-		<bottom x="215" y="300"/>
-		<left x="210" y="272"/>
-		<right x="221" y="273"/>
 		<center/>
+		<right x="221" y="271"/>
 	</eyeL>
 	<eyeR>
-		<top x="254" y="241"/>
-		<bottom x="257" y="300"/>
-		<left x="250" y="275"/>
-		<right x="262" y="275"/>
+		<bottom x="256" y="299"/>
+		<left x="251" y="274"/>
+		<top x="256" y="243"/>
 		<center/>
+		<right x="261" y="275"/>
 	</eyeR>
 	<moustacheL>
-		<top x="175" y="298"/>
-		<bottom x="176" y="322"/>
+		<bottom x="175" y="323"/>
 		<left/>
-		<right/>
+		<top x="174" y="297"/>
 		<center/>
+		<right/>
 	</moustacheL>
 	<moustacheR>
-		<top x="299" y="298"/>
-		<bottom x="297" y="325"/>
+		<bottom x="298" y="326"/>
 		<left/>
-		<right/>
+		<top x="301" y="297"/>
 		<center/>
+		<right/>
 	</moustacheR>
 	<mouth>
-		<top x="238" y="319"/>
-		<bottom x="239" y="333"/>
-		<left x="221" y="325"/>
-		<right x="253" y="324"/>
+		<bottom x="238" y="333"/>
+		<left x="222" y="324"/>
+		<top x="237" y="319"/>
 		<center/>
+		<right x="253" y="325"/>
 	</mouth>
 </Avatar>

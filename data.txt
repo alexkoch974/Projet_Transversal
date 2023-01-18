@@ -1,5 +1,5 @@
-Bx = Ax cos Sx - Ay sin Sy = Ax cos Sx - Ay sin Sy + tx
-By = Ax sin Sx + Ay cos Sy = Ax sin Sx + Ay cos Sy + ty
+Bx = Ax cos Sx - Ay sin Sy + tx
+By = Ax sin Sx + Ay cos Sy + ty
 
 A -> model
 B -> visage
@@ -10,8 +10,8 @@ A = [ Ax ]	B = [ Bx ]
 
 B = MA
 
-M = 	[ cos Sx     -sin Sy     tx ]
-	[ sin Sx      cos Sy     ty ]
+M = 	[ cos Sx     -sin Sy     tx ]   =   B * pinv(A)
+	    [ sin Sx      cos Sy     ty ]
 
 a      b      c
 d      e      f
@@ -95,3 +95,97 @@ Left Moustache : [187, 214]
 bottom : 214
 top : 187
 
+
+
+
+
+{'earL': [array([209, 175, 1]),
+          array([239, 164, 1]), 
+          array([223, 168, 1])],
+ 'earR': [array([277, 162, 1]),
+          array([309, 170, 1]),
+          array([293, 164, 1])],
+ 'face': [array([266, 330, 1]),
+          array([192, 241, 1]),
+          array([258, 162, 1]), 
+          array([332, 234, 1])], 
+ 'eyeL': [array([226, 214, 1]), 
+          array([227, 222, 1]), 
+          array([215, 218, 1]), 
+          array([241, 216, 1])], 
+ 'eyeR': [array([291, 211, 1]), 
+          array([291, 219, 1]), 
+          array([277, 215, 1]), 
+          array([303, 214, 1])], 
+ 'moustacheL': [array([212, 267, 1]), 
+          array([220, 290, 1])], 
+ 'moustacheR': [array([314, 262, 1]), 
+          array([308, 286, 1])], 
+ 'mouth': [array([264, 284, 1]), 
+          array([264, 289, 1]), 
+          array([243, 286, 1]), 
+          array([285, 284, 1])]}
+
+{'earL': - top = None
+         - bottom = None
+         - left = [163 211   1]
+         - right = [206 195   1]
+         - center = [185 202   1]
+, 'earR': - top = None
+         - bottom = None
+         - left = [268 196   1]
+         - right = [309 212   1]
+         - center = [289 201   1]
+, 'face': - top = [236 194   1]
+         - bottom = [236 361   1]
+         - left = [133 287   1]
+         - right = [342 288   1]
+         - center = None
+, 'eyeL': - top = [217 242   1]
+         - bottom = [215 298   1]
+         - left = [210 270   1]
+         - right = [221 271   1]
+         - center = None
+, 'eyeR': - top = [256 242   1]
+         - bottom = [256 298   1]
+         - left = [251 270   1]
+         - right = [262 271   1]
+         - center = None
+, 'moustacheL': - top = [175 297   1]
+         - bottom = [176 321   1]
+         - left = None
+         - right = None
+         - center = None
+, 'moustacheR': - top = [300 297   1]
+         - bottom = [297 325   1]
+         - left = None
+         - right = None
+         - center = None
+, 'mouth': - top = [238 319   1]
+         - bottom = [238 333   1]
+         - left = [221 324   1]
+         - right = [253 324   1]
+         - center = None
+
+
+
+calibration_face["face"] : 
+[array([260, 380,   1]), 
+array([167, 276,   1]), 
+array([253, 191,   1]), 
+array([327, 269,   1])]   
+
+calibration_avatar["face"] : - bottom = [237 361   1]
+                             - left = [133 287   1]
+                             - top = [236 193   1]
+                             - center = None
+                             - right = [342 287   1]
+
+input_face : [[260 380   1]
+             [167 276   1]
+             [253 191   1]
+             [327 269   1]]
+input_avatar : [[237 361   1]
+                 [133 287   1]
+                 [236 193   1]
+                 [342 287   1]]
