@@ -13,8 +13,8 @@ B = MA
 M = 	[ cos Sx     -sin Sy     tx ]   =   B * pinv(A)
 	    [ sin Sx      cos Sy     ty ]
 
-a      b      c
-d      e      f
+			a      		b      	 c
+			d      		e        f
 
 Sx = sqrt(a² + d²)
 Sy = sqrt(b² + e²)

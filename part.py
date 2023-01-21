@@ -37,4 +37,4 @@ class Moving_part :
             result.append(self.right)
         
             
-        return result
+        return np.array(result)

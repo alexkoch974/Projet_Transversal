@@ -49,16 +49,16 @@ from main import mix_images
 
 
 
-im1 = cv2.imread('.\\avatar\\fuwa_glace.png', cv2.IMREAD_UNCHANGED)
-print(im1[240,240,:])
-im_bg = np.ones((480,480,4)) * 255.0
-res = mix_images(im_bg, im1, 0, 0)
-print(res[240,240,:])
-cv2.namedWindow('zouz')
-while True :
-    cv2.imshow('zouz', res/255.0)
+# im1 = cv2.imread('.\\avatar\\fuwa_glace.png', cv2.IMREAD_UNCHANGED)
+# print(im1[240,240,:])
+# im_bg = np.ones((480,480,4)) * 255.0
+# res = mix_images(im_bg, im1, 0, 0)
+# print(res[240,240,:])
+# cv2.namedWindow('zouz')
+# while True :
+#     cv2.imshow('zouz', res/255.0)
     
-    key = cv2.waitKey(1)
-    if key == ord('q'):
-        break
+#     key = cv2.waitKey(1)
+#     if key == ord('q'):
+#         break
             

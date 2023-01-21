@@ -3,6 +3,10 @@ import os
 import numpy as np
 from xml.dom import minidom 
 
+
+
+# DEPRECATED
+
 images = ['earL', 'earR', 'body', 'face', 'crown', 'eyeL', 'eyeR', 'moustacheL', 'moustacheR', 'mouth']
 dico = {
     'earL' : [], 
@@ -157,3 +161,44 @@ xml_str = root.toprettyxml('\t')
 
 with open('calibration_avatar.xml', 'w+') as f:
     f.write(xml_str)
+    
+    
+    
+    
+    
+# DEPRECATED    
+#   
+# Imports are needed but here is a function to parse this type of xml
+# 
+# def get_avatar_points(calibration_file = 'calibration_avatar.xml'):
+#     '''
+#     Function that parses the calibration file of the avatar to get the points of interest.
+    
+#     Args : 
+#         - calibration_file (str) : the path of the xml calibration file 
+    
+#     Return : 
+#         - dict (keys : Moving_part) : points of interest of the avatar
+#     '''
+#     # Initialize dictionary
+#     dico = {}
+    
+#     # Parser le fichier avec minidom
+#     doc = minidom.parse(calibration_file)
+#     root = doc.getElementsByTagName(str(doc.firstChild.tagName))
+#     avatar = root.item(0)
+#     for moving_part in avatar.childNodes :
+#         temp_list = []
+#         temp_part = None
+#         if moving_part.nodeType != Node.TEXT_NODE :
+#             for point in moving_part.childNodes :
+#                 if point.nodeType != Node.TEXT_NODE :
+#                     if point.hasAttribute('x') :
+#                         temp_list.append(np.array([int(point.attributes.item(0).value), int(point.attributes.item(1).value)]))
+#                     else :
+#                         temp_list.append(None)
+#             temp_part = Moving_part(temp_list)            
+#             new_key = {moving_part.tagName : temp_part}
+#             dico.update(new_key)    
+            
+#     return dico

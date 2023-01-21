@@ -6,8 +6,6 @@ from xml.dom import Node, minidom
 from part import Moving_part
 import time
 
-keys = ['earL', 'earR', 'face', 'eyeL', 'eyeR', 'moustacheL', 'moustacheR', 'mouth']
-
 EAR_L = [103, 109, 67]
 EAR_R = [338, 332 , 297]
 FACE = [152, 234, 10, 454]
@@ -19,84 +17,48 @@ MOUTH = [13, 14, 78, 308]
 
 ALL_POINTS = EAR_L + EAR_R + FACE + EYE_L + EYE_R + MOUSTACHE_L + MOUSTACHE_R + MOUTH
 
-# paths = ['.\\avatar\\earL.png', 
-#          '.\\avatar\\earR.png', 
-#          '.\\avatar\\face.png',
-#          '.\\avatar\\eyeL.png',
-#          '.\\avatar\\eyeR.png',
-#          '.\\avatar\\moustacheL.png',
-#          '.\\avatar\\moustacheR.png',
-#          '.\\avatar\\mouth.png']
-paths = ['.\\avatar\\fuwa_glace.png']
+keys = ['earL', 'earR', 'face', 'eyeL', 'eyeR', 'moustacheL', 'moustacheR', 'mouth']
+
+paths = ['.\\avatar\\earL.png', 
+         '.\\avatar\\earR.png', 
+         '.\\avatar\\face.png',
+         '.\\avatar\\eyeL.png',
+         '.\\avatar\\eyeR.png',
+         '.\\avatar\\moustacheL.png',
+         '.\\avatar\\moustacheR.png',
+         '.\\avatar\\mouth.png']
+# paths = ['.\\avatar\\fuwa_glace.png']
 
 
-def get_avatar_points(calibration_file = 'calibration_avatar.xml'):
+def compute_translations(A : np.ndarray, B : np.ndarray) :
+    return np.mean(A - B, 1)
+
+
+def compute_tranformations(A : np.ndarray, B : np.ndarray) :
     '''
-    Function that parses the calibration file of the avatar to get the points of interest.
-    
-    Args : 
-        - calibration_file (str) : the path of the xml calibration file 
-    
-    Return : 
-        - dict (keys : Moving_part) : points of interest of the avatar
+    Function that computes the transformations matrix from a human face to the avatar.
+        
+    Args :
+        - A : points from the face in the current frame
+        - B : points from the face in the calibration frame
+        
+    Retrun :
+        - s : Squeeze vector [squeeze_on_x, squeeze_on_y]
+        - theta : angle of the rotation
     '''
-    # Initialize dictionary
-    dico = {}
+    M = B @ np.linalg.pinv(A)
     
-    # Parser le fichier avec minidom
-    doc = minidom.parse(calibration_file)
-    root = doc.getElementsByTagName(str(doc.firstChild.tagName))
-    avatar = root.item(0)
-    for moving_part in avatar.childNodes :
-        temp_list = []
-        temp_part = None
-        if moving_part.nodeType != Node.TEXT_NODE :
-            for point in moving_part.childNodes :
-                if point.nodeType != Node.TEXT_NODE :
-                    if point.hasAttribute('x') :
-                        temp_list.append(np.array([int(point.attributes.item(0).value), int(point.attributes.item(1).value), 1]))
-                    else :
-                        temp_list.append(None)
-            temp_part = Moving_part(temp_list)            
-            new_key = {moving_part.tagName : temp_part}
-            dico.update(new_key)    
-            
-    return dico
+    a = M[0,0]
+    b = M[0,1]
+    d = M[1,0]
+    e = M[1,1]
+    
+    s = np.array([np.sqrt(a**2 + d**2), np.sqrt(b**2 + e**2)])
+    theta = np.arctan2(b, a)    
+    
+    return s, theta, 
 
 
-def compute_calibration_homorgaphie(calibration_avatar, calibration_face, key) :
-    
-    face_list = []
-    for points in calibration_face[key] :
-        face_list.append(points)
-    input_face = np.array(face_list)          
-    input_avatar = np.array(calibration_avatar[key].get_points())
-    if input_face.size == 0 or input_avatar.size == 0 :
-        H = None
-        flag = False
-    elif input_face.shape[0] < 4 or input_avatar.shape[0] < 4 :
-        face_list = []
-        for points in calibration_face['face'] :
-            face_list.append(points)
-        new_input_face = np.array(face_list)          
-        new_input_avatar = np.array(calibration_avatar['face'].get_points())
-        if input_face.shape[0] == 3 and input_avatar.shape[0] == 3 :
-            H, _ = cv2.findHomography(new_input_face, new_input_avatar)
-            flag = True
-        elif input_face.shape[0] == 2 and input_avatar.shape[0] == 2 :
-            H, _ = cv2.findHomography(new_input_face, new_input_avatar)
-            flag = True
-        else :
-            H = None
-            flag = False
-    else :   
-        H, _ = cv2.findHomography(input_face, input_avatar)
-        flag = True
-    
-    if H is None :
-        flag = False
-    
-    return H, flag
 
 
 def calibrate_face(points_mat) :
@@ -120,8 +82,6 @@ def calibrate_face(points_mat) :
         'mouth' : []
     }
     for i in range(len(points_mat)) :
-        if len(points_mat[i]) == 2 :
-            points_mat[i].append(1)
         if i in range(3) :
             dico['earL'].append(np.array(points_mat[i]))
         elif i in range(3,6) :
@@ -138,33 +98,86 @@ def calibrate_face(points_mat) :
             dico['moustacheR'].append(np.array(points_mat[i]))
         elif i in range(22,26) :
             dico['mouth'].append(np.array(points_mat[i]))
+    
+    for k in dico.keys() :
+        dico[k] = np.array(dico[k])
             
     
     return dico
 
 
-
-def mix_images(img_source: np.ndarray, img_overlay: np.ndarray) :
-    """Overlay img_overlay on top of img_source, using alpha
+def mix_images(img_source: np.ndarray, img_overlay: np.ndarray, x: int | float, y: int | float) :
+    """Overlay img_overlay on top of img_source at the position (x, y), using alpha
     channel of img_overlay.
-
     Args:
         img_source (np.ndarray): background image
         img_overlay (np.ndarray): overlay image
-
+        x (int | float): x position
+        y (int | float): y position
     Returns:
         np.ndarray: overlayed image
     """
-    
+
+    # Setup
+    x, y = int(x), int(y)
     img = img_source.copy()
-    img_crop = img
-    img_overlay_crop = img_overlay
-    alpha = img_overlay[:, :, 3][:, :, np.newaxis] / 255.0
+
+    # Image ranges
+    y1, y2 = max(0, y), min(img.shape[0], y + img_overlay.shape[0])
+    x1, x2 = max(0, x), min(img.shape[1], x + img_overlay.shape[1])
+
+    # Overlay ranges
+    y1o, y2o = max(0, -y), min(img_overlay.shape[0], img.shape[0] - y)
+    x1o, x2o = max(0, -x), min(img_overlay.shape[1], img.shape[1] - x)
+
+    # Exit if nothing to do
+    if y1 >= y2 or x1 >= x2 or y1o >= y2o or x1o >= x2o:
+        return img
+
+    # Blend overlay within the determined ranges
+    img_crop = img[y1:y2, x1:x2]
+    img_overlay_crop = img_overlay[y1o:y2o, x1o:x2o]
+    alpha = img_overlay[y1o:y2o, x1o:x2o, 3][:, :, np.newaxis] / 255.0
     alpha_inv = 1.0 - alpha
 
     img_crop[:] = alpha * img_overlay_crop + alpha_inv * img_crop
 
     return img
+
+
+
+
+def rotate_image(img: np.ndarray, angle: float) :
+    """Rotate image.
+    Args:
+        img (np.ndarray): image
+        angle (float): angle (in radians)
+    Returns:
+        np.ndarray: rotated image
+    """
+
+    height, width = img.shape[:2]
+    image_center = (width / 2, height / 2)
+
+    # Get rotation matrix
+    rotation_mat = cv2.getRotationMatrix2D(image_center, angle*180/np.pi, 1.0)
+
+    # Rotation calculates the cos and sin, taking absolutes of those.
+    abs_cos = abs(rotation_mat[0, 0])
+    abs_sin = abs(rotation_mat[0, 1])
+
+    # Find the new width and height
+    new_width = int(height * abs_sin + width * abs_cos)
+    new_height = int(height * abs_cos + width * abs_sin)
+
+    # Move image to fit new dimensions
+    rotation_mat[0, 2] += new_width / 2 - image_center[0]
+    rotation_mat[1, 2] += new_height / 2 - image_center[1]
+
+    # Rotate the image
+    rotated_img = cv2.warpAffine(img, rotation_mat, (new_width, new_height))
+
+    return rotated_img
                 
 
 
@@ -172,29 +185,32 @@ def mix_images(img_source: np.ndarray, img_overlay: np.ndarray) :
 def _main_() :
     
     mp_face_mesh = mp.solutions.face_mesh
-    calibration_avatar = get_avatar_points('.\\calibration_avatar.xml')
+    cv2.namedWindow("Preview")
+    cv2.namedWindow('Result')
     calibration_face = {}
     not_calibrated = True
-    avatar_ready = False
-    cap = cv2.VideoCapture(0)
-    cv2.namedWindow("Face Calibration")
-    cv2.namedWindow("Preview")   
-    loops = 0
-    liste_points = []
+    calibration_done = False
+    background_image = np.concatenate((cv2.imread('.\\avatar\\body.png', cv2.IMREAD_UNCHANGED), np.ones((480,480,1))*255.0), 2)
+    homographies = []
+    avatar_pieces_old = []
+    for p in paths :
+        avatar_pieces_old.append(cv2.imread(p, cv2.IMREAD_UNCHANGED))
+
+    cap = cv2.VideoCapture(0) 
+    detected_points_old = np.zeros((len(ALL_POINTS),2))
+    detected_points = np.zeros((len(ALL_POINTS),2))
     
     with mp_face_mesh.FaceMesh(max_num_faces=1,
     refine_landmarks=True,
     min_detection_confidence=0.5,
     min_tracking_confidence=0.5) as face_mesh:
-        while cap.isOpened():
-                            
-            avatar_pieces = []
-            for p in paths :
-                avatar_pieces.append(cv2.imread(p, cv2.IMREAD_UNCHANGED)) 
+        while cap.isOpened(): 
             
             success, image = cap.read()
-            preview_image = image.copy()
             image = image[:,80:560,:]
+            result_image = background_image.copy()
+            avatar_pieces = avatar_pieces_old.copy()
+            homographies.clear()
             
             if not success:
                 print("Ignoring empty camera frame.")
@@ -210,20 +226,23 @@ def _main_() :
             else :
                 continue
 
-            points_mat = [[int(results.landmark[i].x*image.shape[1]), int(results.landmark[i].y*image.shape[0])] for i in ALL_POINTS]
+            
+            detected_points = np.array([[int(results.landmark[i].x*image.shape[1]), int(results.landmark[i].y*image.shape[0])] for i in ALL_POINTS])
+            distances = []
+            for i in range(len(ALL_POINTS)) :
+                distances.append(np.linalg.norm(detected_points[i,:] - detected_points_old[i,:]))
                 
-            if points_mat :               
-                for point in points_mat:
-                    cv2.circle(image, (int(point[0]), int(point[1])), 1, (0, 255, 0), 1)
+            if np.mean(np.array(distances)) < 2 :
+                detected_points = detected_points_old.copy()
+                
+                
+            if detected_points is not None and not calibration_done:               
+                for i in range(detected_points.shape[0]):
+                    cv2.circle(image, (int(detected_points[i,0]), int(detected_points[i,1])), 1, (0, 255, 0), 1)
                     
                 
             image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-            
-            cv2.imshow('Preview', cv2.flip(preview_image, 1))
-
-            
-            if not_calibrated :
-                cv2.imshow('Face Calibration', cv2.flip(image, 1))
+            cv2.imshow('Preview', cv2.flip(image, 1))
                 
             key = cv2.waitKey(1)
             if key == ord('q') or key == 27 :
@@ -231,31 +250,24 @@ def _main_() :
             elif key == 13 :
                 if not_calibrated :
                     not_calibrated = False
-                    calibration_face = calibrate_face(points_mat)
-                    cv2.destroyWindow("Face Calibration")
-                    avatar_ready = True
+                    calibration_face = calibrate_face(list(detected_points))
+                    calibration_done = True
             
-            if loops >= 1 : 
-                dico_buff = calibration_face.copy()
-            
-                if avatar_ready :
-                    calibration_face = calibrate_face(points_mat)
-                    homographies = [] 
-                    for i in range(len(paths)) :
-                        H, homography_is_good = compute_calibration_homorgaphie(calibration_avatar, calibration_face, 'face')
-                        if homography_is_good :
-                            homographies.append(H)
-                        else :
-                            break
-                    if homography_is_good :
-                        result_image = np.ones((480,480,4)) * 255.0
-                        for i in range(len(paths)) :
-                            if homographies[i].shape == (3,3) :
-                                avatar_pieces[i] = cv2.warpPerspective(avatar_pieces[i], homographies[i], (480, 480))
-                            result_image = mix_images(result_image, avatar_pieces[i])
-                        cv2.imshow('Result', result_image/255.0)
-                    
-            loops += 1
+            if calibration_done :
+                points_face = calibrate_face(list(detected_points))
+                for i in range(len(avatar_pieces)) :
+                                            
+                    squeeze, theta = compute_tranformations(np.transpose(points_face[keys[i]]), np.transpose(calibration_face[keys[i]]))
+                    t = compute_translations(np.transpose(points_face[keys[i]]), np.transpose(calibration_face[keys[i]]))
+                    avatar_pieces[i] = rotate_image(avatar_pieces[i], theta)
+                    result_image = mix_images(result_image, avatar_pieces[i], t[0], t[1])
+            else :        
+                for i in range(len(paths)) :    
+                    result_image = mix_images(result_image, avatar_pieces[i], 0, 0)
+                
+            cv2.imshow('Result', cv2.flip(result_image/255.0, 1))
+                
+            detected_points_old = detected_points.copy()
             
 
 
