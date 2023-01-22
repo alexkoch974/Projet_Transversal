@@ -39,8 +39,8 @@ def compute_tranformations(A : np.ndarray, B : np.ndarray) :
     Function that computes the transformations matrix from a human face to the avatar.
         
     Args :
-        - A : points from the face in the current frame
-        - B : points from the face in the calibration frame
+        - A (np.ndarray) : points from the face in the current frame
+        - B (np.ndarray) : points from the face in the calibration frame
         
     Retrun :
         - s : Squeeze vector [squeeze_on_x, squeeze_on_y]
@@ -50,11 +50,23 @@ def compute_tranformations(A : np.ndarray, B : np.ndarray) :
     
     a = M[0,0]
     b = M[0,1]
-    d = M[1,0]
-    e = M[1,1]
+    c = M[1,0]
+    d = M[1,1]
     
-    s = np.array([np.sqrt(a**2 + d**2), np.sqrt(b**2 + e**2)])
-    theta = np.arctan2(b, a)    
+    s = np.array([np.sqrt(a**2 + c**2), np.sqrt(b**2 + d**2)])
+    if np.abs(np.arctan2(b, a)) > np.abs(np.arctan2(c, d)) :
+        if np.arctan2(b, a) > np.pi/4 :
+            theta = np.pi/4
+        else :
+            theta = np.arctan2(b, a)
+    else :
+        if np.arctan2(c, d) > np.pi/4 :
+            theta = - np.pi/4
+        else :
+            theta = - np.arctan2(c, d)
+        
+
+   
     
     return s, theta, 
 
@@ -66,7 +78,7 @@ def calibrate_face(points_mat) :
     Function to get the points of interest on the input face from mediapipe process.
     
     Args : 
-        - points_mat (list(np.array)) : list of the points of interest on the face
+        - points_mat (list(np.ndarray)) : list of the points of interest on the face
     
     Return : 
         - dict : points of interest of the face
@@ -102,7 +114,6 @@ def calibrate_face(points_mat) :
     for k in dico.keys() :
         dico[k] = np.array(dico[k])
             
-    
     return dico
 
 
@@ -147,7 +158,7 @@ def mix_images(img_source: np.ndarray, img_overlay: np.ndarray, x: int | float, 
 
 
 
-def rotate_image(img: np.ndarray, angle: float) :
+def rotate_image(img: np.ndarray, angle: float, x: int | float, y: int | float) :
     """Rotate image.
     Args:
         img (np.ndarray): image
@@ -157,10 +168,10 @@ def rotate_image(img: np.ndarray, angle: float) :
     """
 
     height, width = img.shape[:2]
-    image_center = (width / 2, height / 2)
+    image_center = (int(x), int(y))
 
     # Get rotation matrix
-    rotation_mat = cv2.getRotationMatrix2D(image_center, angle*180/np.pi, 1.0)
+    rotation_mat = cv2.getRotationMatrix2D(image_center, -angle*180/np.pi, 1.0)
 
     # Rotation calculates the cos and sin, taking absolutes of those.
     abs_cos = abs(rotation_mat[0, 0])
@@ -170,15 +181,73 @@ def rotate_image(img: np.ndarray, angle: float) :
     new_width = int(height * abs_sin + width * abs_cos)
     new_height = int(height * abs_cos + width * abs_sin)
 
-    # Move image to fit new dimensions
-    rotation_mat[0, 2] += new_width / 2 - image_center[0]
-    rotation_mat[1, 2] += new_height / 2 - image_center[1]
-
     # Rotate the image
     rotated_img = cv2.warpAffine(img, rotation_mat, (new_width, new_height))
 
     return rotated_img
-                
+
+
+
+
+def transform(points_face, calibration_face, avatar_pieces, result_image) :
+    '''
+    Function that computes and apply transformations on the differents parts of the avatar.
+    
+    Args :
+        - points_face (dict) : points on the face for the current frame
+        - calibration_face (dict) : points on the face for the calibration frame
+        - avatar_pieces (list(np.ndarray)) : list of the images of the avatar parts
+        - result_image (np.ndarray) : background image
+        
+    Return :
+        - np.ndarray : the final image of the avatar to show for this frame
+    '''
+    # Changing the order to compute the face's transformation first and apply it to the other parts
+    # local_keys = ['face', 'earL', 'earR', 'eyeL', 'eyeR', 'moustacheL', 'moustacheR', 'mouth']
+    # temp = avatar_pieces[0].copy()
+    # avatar_pieces[0] = avatar_pieces[1].copy()
+    # avatar_pieces[1] = avatar_pieces[2].copy()
+    # avatar_pieces[2] = temp
+    
+    for i in range(len(avatar_pieces)) :
+        
+        squeeze, theta = (1,0)
+        t = np.array([0,0])
+
+        
+        ############################################################################################################################ - EARS
+        
+        if keys[i] == 'earL' or keys[i] == 'earR' :
+            t = compute_translations(np.transpose(points_face[keys[i]]), np.transpose(calibration_face[keys[i]]))
+            
+        ############################################################################################################################ - FACE
+        
+        elif keys[i] == 'face' :
+            squeeze, theta = compute_tranformations(np.transpose(points_face['face']), np.transpose(calibration_face['face']))
+            center = calibration_face['face'][0]
+            avatar_pieces[i] = rotate_image(avatar_pieces[i], theta, center[0], center[1])
+            
+        ############################################################################################################################ - EYES
+        
+        elif keys[i] == 'eyeL' or keys[i] == 'eyeR' :
+            t = compute_translations(np.transpose(points_face[keys[i]]), np.transpose(calibration_face[keys[i]]))
+            squeeze, _ = compute_tranformations(np.transpose(points_face[keys[i]]), np.transpose(calibration_face[keys[i]]))
+            
+        ############################################################################################################################ - MOUSTACHES
+        
+        elif keys[i] == 'moustacheL' or keys[i] == 'moustacheR' :
+            t = compute_translations(np.transpose(points_face[keys[i]]), np.transpose(calibration_face[keys[i]]))
+            
+        ############################################################################################################################ - MOUTH
+        
+        elif keys[i] == 'mouth' :
+            t = compute_translations(np.transpose(points_face['mouth']), np.transpose(calibration_face['mouth']))
+            
+        ############################################################################################################################
+        
+        result_image = mix_images(result_image, avatar_pieces[i], t[0], t[1])
+    
+    return result_image
 
 
 
@@ -190,6 +259,7 @@ def _main_() :
     calibration_face = {}
     not_calibrated = True
     calibration_done = False
+    display_landmarks = True
     background_image = np.concatenate((cv2.imread('.\\avatar\\body.png', cv2.IMREAD_UNCHANGED), np.ones((480,480,1))*255.0), 2)
     homographies = []
     avatar_pieces_old = []
@@ -236,31 +306,38 @@ def _main_() :
                 detected_points = detected_points_old.copy()
                 
                 
-            if detected_points is not None and not calibration_done:               
-                for i in range(detected_points.shape[0]):
-                    cv2.circle(image, (int(detected_points[i,0]), int(detected_points[i,1])), 1, (0, 255, 0), 1)
+            if detected_points is not None :   
+                if display_landmarks :            
+                    for i in range(detected_points.shape[0]):
+                        cv2.circle(image, (int(detected_points[i,0]), int(detected_points[i,1])), 1, (0, 255, 0), 1)
                     
                 
             image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-            cv2.imshow('Preview', cv2.flip(image, 1))
+            image = cv2.flip(image, 1)
+            cv2.putText(image, 'Try to reproduce the avatar\'s facial expression', (50,20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+            cv2.putText(image, 'Then press Enter to start', (145,40), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+            cv2.putText(image, 'Press Esc or Q to quit', (150,450), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+            if display_landmarks : 
+                cv2.putText(image, 'Press X to hide landmarks', (130,470), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+            else :
+                cv2.putText(image, 'Press X to display landmarks', (130,470), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+            cv2.imshow('Preview', image)
                 
             key = cv2.waitKey(1)
             if key == ord('q') or key == 27 :
                 break
+            if key == ord('x') :
+                display_landmarks = not display_landmarks
             elif key == 13 :
                 if not_calibrated :
                     not_calibrated = False
                     calibration_face = calibrate_face(list(detected_points))
                     calibration_done = True
+                    display_landmarks = False
             
             if calibration_done :
                 points_face = calibrate_face(list(detected_points))
-                for i in range(len(avatar_pieces)) :
-                                            
-                    squeeze, theta = compute_tranformations(np.transpose(points_face[keys[i]]), np.transpose(calibration_face[keys[i]]))
-                    t = compute_translations(np.transpose(points_face[keys[i]]), np.transpose(calibration_face[keys[i]]))
-                    avatar_pieces[i] = rotate_image(avatar_pieces[i], theta)
-                    result_image = mix_images(result_image, avatar_pieces[i], t[0], t[1])
+                result_image = transform(points_face, calibration_face, avatar_pieces, result_image) 
             else :        
                 for i in range(len(paths)) :    
                     result_image = mix_images(result_image, avatar_pieces[i], 0, 0)
