@@ -1,8 +1,9 @@
+import os
 import cv2
+import json
 import numpy as np
 
 from utils import *
-
 
 
 def click(event, x, y, flags, param):
@@ -22,7 +23,6 @@ def click(event, x, y, flags, param):
     elif event == cv2.EVENT_RBUTTONDOWN:
         if closest in saved_points:
             saved_points.remove(closest)
-        
 
 cv2.namedWindow("Test", cv2.WINDOW_NORMAL)
 cv2.setMouseCallback("Test", click)
@@ -34,6 +34,13 @@ cap = cv2.VideoCapture(0)
 
 prev_points = []
 
+red_points = np.array([
+    [0.0, 0.0, 1.0],
+    [600.0, 0.0, 1.0],
+    [600.0, 560.0, 1.0],
+    [0.0, 560.0, 1.0],
+    ])
+
 while True:
 
     success, frame = cap.read()
@@ -41,19 +48,20 @@ while True:
         continue
 
     frame = cv2.flip(frame, 1)
-    points_ = point_detector.process(frame)
-
-    if points_ is None:
+    points = point_detector.process(frame)
+    
+    if points is None:
         continue
-    points = points_
-    
+
     for point in points:
-        cv2.circle(frame, (int(point[0]), int(point[1])), 1, (255, 255, 255), cv2.FILLED)
-    
+        cv2.circle(frame, (int(point[0]), int(
+            point[1])), 1, (255, 255, 255), cv2.FILLED)
+
     for point_id in saved_points:
         point = points[point_id]
-        cv2.circle(frame, (int(point[0]), int(point[1])), 1, (0, 255, 0), cv2.FILLED)
-        
+        cv2.circle(frame, (int(point[0]), int(
+            point[1])), 1, (0, 255, 0), cv2.FILLED)
+
     cv2.imshow("Test", frame)
 
     key = cv2.waitKey(1)
